@@ -1,0 +1,25 @@
+{
+  "output": "A YOLOv8 detector was developed and deployed on a Raspberry Pi 4, achieving a F1-score of 94.2% at a frame rate of 28 fps, with a power consumption of 4.5 W.",
+  "entities": {
+    "lost": [],
+    "added": []
+  },
+  "units_changed": [],
+  "flesch": {
+    "input": 76.46,
+    "output": 65.57,
+    "reference_p10_p90": [
+      9.97,
+      41.98
+    ],
+    "in_range": false
+  },
+  "warnings": [
+    "Legibilidad Flesch (65.57) fuera del rango típico [p10=10.0, p90=42.0] de abstracts de ingeniería."
+  ],
+  "meta": {
+    "model_id": "Qwen/Qwen2.5-3B-Instruct",
+    "prompt_id": "P-PAP-v1",
+    "prompt_hash": "359d4b18484a"
+  }
+}

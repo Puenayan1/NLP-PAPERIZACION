@@ -1,0 +1,8 @@
+Metrica,Sintetico_Herramienta_(mismos_12),GoldReal_Herramienta_(P-PAP-v1),GoldReal_LineaBase_(P-BASE-v1),Brecha_(Real_menos_Sintetico)
+ent_cov_A,0.8507,0.7329,0.6211,-0.1178
+ent_cov_I,0.8693,0.8322,0.6574,-0.0371
+ent_prec_A,0.93,0.8418,0.764,-0.0882
+unit_preserved,0.4487,0.5,0.25,0.0513
+bertscore_f1,0.4485,0.4723,0.4266,0.0238
+rougeL_f1,0.4444,0.4743,0.4488,0.03
+flesch_in_range,0.4231,0.5,0.5833,0.0769

@@ -1,0 +1,58 @@
+{
+  "selected_model_init": "en_core_web_md",
+  "dev_f1_scratch": 0.8579,
+  "dev_f1_md": 0.8889,
+  "test_results": {
+    "only_rules": {
+      "ents_p": 0.9333,
+      "ents_r": 0.8898,
+      "ents_f": 0.9111,
+      "ents_per_type": {
+        "TECH": {
+          "p": 0.9161,
+          "r": 0.8606,
+          "f": 0.8875
+        },
+        "MEASURE": {
+          "p": 0.9714,
+          "r": 0.9577,
+          "f": 0.9645
+        }
+      }
+    },
+    "only_model": {
+      "ents_p": 0.9263,
+      "ents_r": 0.8517,
+      "ents_f": 0.8874,
+      "ents_per_type": {
+        "TECH": {
+          "p": 0.902,
+          "r": 0.8364,
+          "f": 0.8679
+        },
+        "MEASURE": {
+          "p": 0.9844,
+          "r": 0.8873,
+          "f": 0.9333
+        }
+      }
+    },
+    "hybrid_rules_priority": {
+      "ents_p": 0.9134,
+      "ents_r": 0.8941,
+      "ents_f": 0.9036,
+      "ents_per_type": {
+        "TECH": {
+          "p": 0.8882,
+          "r": 0.8667,
+          "f": 0.8773
+        },
+        "MEASURE": {
+          "p": 0.9714,
+          "r": 0.9577,
+          "f": 0.9645
+        }
+      }
+    }
+  }
+}

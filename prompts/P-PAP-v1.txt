@@ -1,0 +1,11 @@
+Rewrite the draft abstract below in formal academic register, suitable for an engineering journal.
+
+Hard rules:
+1. Preserve every number with its unit, every acronym, and every model, dataset, hardware and metric name EXACTLY as written.
+2. Do not add any fact, claim or result that is not in the draft. Do not remove any fact.
+3. Replace first person and colloquial wording with impersonal, precise academic phrasing (for example: 'This work proposes...', 'The results show...').
+4. Keep the order of the information. Write one paragraph.
+5. Output only the abstract, with no comments.
+
+Draft:
+{draft}

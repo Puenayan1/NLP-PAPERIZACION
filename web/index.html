@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>AbstractBot</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: app de chat a dos columnas (historial a la izquierda, espacio de trabajo a la derecha); vistas por hash: inicio, como-funciona, equipo */
+:root {
+  --bg: #ffffff;
+  --bg-soft: #f6f5ff;
+  --surface: #ffffff;
+  --line: #e7e4fb;
+  --fg: #16133a;
+  --fg-2: #4d4970;
+  --fg-3: #8682a8;
+  --violet: #6b3cf6;
+  --violet-soft: #efe9ff;
+  --blue: #2f5bff;
+  --blue-soft: #e8eeff;
+  --ok: #12a46b; --ok-soft: #e3f7ee;
+  --warn: #d98a00; --warn-soft: #fff4dc;
+  --bad: #e0384f; --bad-soft: #fde8eb;
+  --shadow: 0 1px 2px rgba(40,24,120,.06), 0 8px 28px rgba(60,40,170,.08);
+  --f-display: "Sora", "Inter", system-ui, sans-serif;
+  --f-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r: 14px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e0c22; --bg-soft: #15122f; --surface: #1a1738; --line: #2c2856;
+  --fg: #f1efff; --fg-2: #bdb8e6; --fg-3: #8580b5;
+  --violet: #9b7bff; --violet-soft: #2a2160; --blue: #6f8fff; --blue-soft: #1d2658;
+  --ok: #3ad69a; --ok-soft: #123a2c; --warn: #ffbf47; --warn-soft: #3b2d0c; --bad: #ff6b7f; --bad-soft: #43151e;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 28px rgba(0,0,0,.35); color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0e0c22; --bg-soft: #15122f; --surface: #1a1738; --line: #2c2856;
+  --fg: #f1efff; --fg-2: #bdb8e6; --fg-3: #8580b5;
+  --violet: #9b7bff; --violet-soft: #2a2160; --blue: #6f8fff; --blue-soft: #1d2658;
+  --ok: #3ad69a; --ok-soft: #123a2c; --warn: #ffbf47; --warn-soft: #3b2d0c; --bad: #ff6b7f; --bad-soft: #43151e;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 28px rgba(0,0,0,.35); color-scheme: dark; }
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.55 var(--f-body); -webkit-font-smoothing: antialiased; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--violet); outline-offset: 2px; border-radius: 8px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: -.01em; }
+.grad-text { background: linear-gradient(90deg, var(--violet), var(--blue)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+.app { display: grid; grid-template-columns: 284px minmax(0,1fr); min-height: 100%; }
+
+/* ---------- Sidebar ---------- */
+.side { background: var(--bg-soft); border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 14px;
+  padding-block: 18px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: 16px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--fg); }
+.brand svg { width: 38px; height: 38px; flex: none; }
+.brand b { font-family: var(--f-display); font-size: 19px; font-weight: 800; }
+.brand small { display: block; font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--fg-3); }
+.btn-new { display: flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 12px; padding: 11px 14px;
+  background: linear-gradient(90deg, var(--violet), var(--blue)); color: #fff; font-weight: 600; box-shadow: 0 6px 18px rgba(91,60,246,.28); transition: transform .15s; }
+.btn-new:hover { transform: translateY(-1px); }
+.search { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; color: var(--fg-3); }
+.search input { border: 0; background: transparent; outline: none; flex: 1; min-width: 0; color: var(--fg); }
+.search kbd { font: 11px var(--f-mono); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; }
+.nav { display: grid; gap: 2px; }
+.nav a { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 9px; color: var(--fg-2); text-decoration: none; font-weight: 500; }
+.nav a:hover { background: var(--surface); color: var(--fg); }
+.nav a.on { background: var(--violet-soft); color: var(--violet); }
+.nav svg { width: 17px; height: 17px; }
+.side h4 { white-space: nowrap; gap: 8px; margin: 6px 0 0; font: 600 10.5px var(--f-body); letter-spacing: .08em; text-transform: uppercase; color: var(--fg-3); display: flex; justify-content: space-between; }
+.side h4 button { border: 0; background: none; color: var(--violet); font-size: 11px; letter-spacing: 0; text-transform: none; padding: 0; }
+.history { display: grid; gap: 2px; }
+.hist { display: grid; grid-template-columns: 26px minmax(0,1fr) 22px; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 9px; border: 0; background: none; text-align: left; width: 100%; }
+.hist:hover, .hist.on { background: var(--surface); }
+.hist .ico { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: var(--violet-soft); color: var(--violet); }
+.hist .ico svg { width: 14px; height: 14px; }
+.hist .t { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hist .d { font-size: 11.5px; color: var(--fg-3); }
+.hist .del { opacity: 0; border: 0; background: none; color: var(--fg-3); padding: 2px; border-radius: 6px; }
+.hist:hover .del { opacity: 1; }
+.hist .del:hover { color: var(--bad); }
+.empty-hist { font-size: 12.5px; color: var(--fg-3); padding: 6px 8px; }
+.side-foot { margin-top: auto; display: grid; gap: 10px; }
+.privacy { border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 10px 12px; font-size: 12px; color: var(--fg-2); display: flex; gap: 10px; }
+.privacy svg { width: 18px; height: 18px; color: var(--ok); flex: none; margin-top: 1px; }
+.user { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; }
+.avatar { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font: 700 12px var(--f-display); color: #fff; background: linear-gradient(135deg, var(--violet), var(--blue)); flex: none; }
+.user .n { font-weight: 600; font-size: 13px; }
+.user .e { font-size: 11.5px; color: var(--fg-3); }
+
+/* ---------- Main ---------- */
+.main { min-width: 0; display: flex; flex-direction: column; }
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding-block: 10px; padding-left: 22px; padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.icon-btn.menu-btn { display: none; }
+.chip { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 12px; font-size: 12.5px; font-weight: 500; color: var(--fg-2); white-space: nowrap; }
+.chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--fg-3); }
+.chip.live .dot { background: var(--ok); box-shadow: 0 0 0 3px var(--ok-soft); }
+.chip.demo .dot { background: var(--warn); box-shadow: 0 0 0 3px var(--warn-soft); }
+.chip select { border: 0; background: transparent; outline: none; font-weight: 600; color: var(--fg); }
+.top .spacer { flex: 1; }
+.icon-btn { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; height: 36px; min-width: 36px; padding: 0 10px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; color: var(--fg-2); font-weight: 500; font-size: 13px; }
+.icon-btn:hover { color: var(--violet); border-color: var(--violet); }
+.icon-btn svg { width: 16px; height: 16px; }
+.counter { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 6px 12px 6px 6px; background: linear-gradient(90deg, var(--violet-soft), var(--blue-soft)); font-size: 12.5px; color: var(--fg-2); }
+.counter b { font: 700 13px var(--f-display); color: var(--violet); font-variant-numeric: tabular-nums; }
+.counter .badge { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(135deg, var(--violet), var(--blue)); color: #fff; }
+.counter .badge svg { width: 13px; height: 13px; }
+
+.view { padding-block: 26px 48px; padding-left: 28px; padding-right: max(16px, env(safe-area-inset-right, 0px)); max-width: 1180px; width: 100%; margin: 0 auto; }
+
+/* Hero */
+.hero { display: grid; grid-template-columns: minmax(0,1.25fr) minmax(0,1fr); gap: 24px; align-items: center; margin-bottom: 22px; }
+.eyebrow { font: 600 11px var(--f-body); letter-spacing: .2em; text-transform: uppercase; color: var(--violet); }
+.hero h1 { font-size: clamp(30px, 4.4vw, 50px); font-weight: 800; line-height: 1.04; margin-top: 8px; }
+.hero .subtitle { margin-top: 10px; font: 600 12.5px var(--f-display); letter-spacing: .05em; color: var(--fg-2); text-transform: uppercase; max-width: 52ch; }
+.hero p.lead { margin: 12px 0 0; color: var(--fg-2); font-size: 15px; max-width: 56ch; }
+.features { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.feat { display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px 7px 8px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-weight: 500; font-size: 13px; color: var(--fg-2); transition: border-color .15s, transform .15s; }
+.feat:hover { border-color: var(--violet); transform: translateY(-1px); }
+.feat i { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--violet-soft); color: var(--violet); }
+.feat i svg { width: 13px; height: 13px; }
+.art { position: relative; aspect-ratio: 1.25; max-width: 100%; }
+.art .blob { position: absolute; inset: 6% 4%; border-radius: 46% 54% 50% 50% / 55% 45% 55% 45%; background: radial-gradient(circle at 30% 30%, var(--violet-soft), transparent 60%), radial-gradient(circle at 75% 70%, var(--blue-soft), transparent 60%); }
+.art .bot { position: absolute; left: 2%; bottom: 0; width: 56%; animation: float 5s ease-in-out infinite; }
+.art .brain { position: absolute; right: 0; top: 2%; width: 52%; animation: float 6s ease-in-out -2s infinite; }
+.art .bubble { position: absolute; left: 44%; top: 8%; background: var(--surface); border: 1px solid var(--line); border-radius: 14px 14px 14px 4px; padding: 7px 11px; font: 500 12px var(--f-mono); color: var(--violet); box-shadow: var(--shadow); white-space: nowrap; }
+@keyframes float { 50% { transform: translateY(-8px); } }
+
+/* Composer */
+.workspace { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 16px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); display: flex; flex-direction: column; min-width: 0; }
+.panel-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.panel-head h3 { font-size: 14.5px; font-weight: 700; }
+.panel-head .meta { margin-left: auto; font: 12px var(--f-mono); color: var(--fg-3); }
+.seg { display: inline-flex; background: var(--bg-soft); border: 1px solid var(--line); border-radius: 10px; padding: 3px; }
+.seg button { border: 0; background: none; padding: 5px 11px; border-radius: 7px; font-weight: 600; font-size: 12.5px; color: var(--fg-2); display: inline-flex; align-items: center; gap: 6px; }
+.seg button.on { background: var(--surface); color: var(--violet); box-shadow: 0 1px 3px rgba(40,24,120,.12); }
+.seg button[disabled] { opacity: .55; cursor: not-allowed; }
+.soon { font-size: 9.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; background: var(--blue-soft); color: var(--blue); border-radius: 5px; padding: 1px 5px; }
+textarea#inputText { border: 0; resize: vertical; outline: none; padding: 14px; min-height: 230px; background: transparent; line-height: 1.6; font-size: 14.5px; }
+.tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 10px 12px; border-top: 1px solid var(--line); }
+.tool { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--bg-soft); border-radius: 9px; padding: 6px 10px; font-size: 12.5px; font-weight: 500; color: var(--fg-2); }
+.tool:hover { border-color: var(--violet); color: var(--violet); }
+.tool svg { width: 14px; height: 14px; }
+.tool.toggle[aria-pressed="true"] { background: var(--violet-soft); border-color: transparent; color: var(--violet); }
+.tool select { border: 0; background: transparent; outline: none; font-weight: 600; }
+.send { margin-left: auto; border: 0; border-radius: 12px; padding: 10px 18px; background: linear-gradient(90deg, var(--violet), var(--blue)); color: #fff; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 6px 18px rgba(91,60,246,.3); }
+.send:disabled { opacity: .6; cursor: progress; }
+.send svg { width: 16px; height: 16px; }
+.protected { padding: 10px 14px 14px; border-top: 1px dashed var(--line); }
+.protected .lbl { font: 600 11px var(--f-body); letter-spacing: .12em; text-transform: uppercase; color: var(--fg-3); margin-bottom: 8px; display: flex; gap: 10px; flex-wrap: wrap; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { font: 500 12px var(--f-mono); padding: 3px 8px; border-radius: 6px; border: 1px solid transparent; }
+.tag.TECH, mark.TECH { background: var(--violet-soft); color: var(--violet); }
+.tag.MEASURE, mark.MEASURE { background: var(--blue-soft); color: var(--blue); }
+.tag.lost { background: var(--bad-soft); color: var(--bad); text-decoration: line-through; }
+.tag.added { background: var(--warn-soft); color: var(--warn); }
+mark { border-radius: 4px; padding: 0 2px; font-weight: 500; }
+.legend { display: inline-flex; gap: 6px; align-items: center; text-transform: none; letter-spacing: 0; font-weight: 500; font-size: 11.5px; }
+.legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+.output { padding: 14px; min-height: 230px; line-height: 1.7; font-size: 14.5px; white-space: pre-wrap; overflow-wrap: anywhere; flex: 1; }
+.output.placeholder { color: var(--fg-3); }
+.out-actions { display: flex; gap: 8px; flex-wrap: wrap; padding: 10px 12px; border-top: 1px solid var(--line); }
+.feedback { margin-left: auto; display: inline-flex; gap: 4px; }
+
+/* Progress */
+.steps { display: grid; gap: 8px; padding: 18px 16px; }
+.step { display: grid; grid-template-columns: 22px 1fr auto; gap: 10px; align-items: center; font-size: 13px; color: var(--fg-3); }
+.step .s { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center; }
+.step.run { color: var(--fg); }
+.step.run .s { border-color: var(--violet); border-top-color: transparent; animation: spin .8s linear infinite; }
+.step.done { color: var(--fg-2); }
+.step.done .s { border-color: var(--ok); background: var(--ok); color: #fff; }
+.step .ms { font: 11.5px var(--f-mono); }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Report */
+.report { margin-top: 16px; display: grid; grid-template-columns: minmax(0,1.1fr) minmax(0,1fr); gap: 16px; }
+.verdict { display: flex; gap: 14px; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.light { display: flex; flex-direction: column; gap: 5px; background: var(--fg); padding: 7px; border-radius: 12px; flex: none; }
+.light span { width: 16px; height: 16px; border-radius: 50%; background: color-mix(in srgb, var(--bg) 25%, transparent); }
+.light.ok span:nth-child(3) { background: #22c47e; box-shadow: 0 0 10px #22c47e; }
+.light.warn span:nth-child(2) { background: #ffb020; box-shadow: 0 0 10px #ffb020; }
+.light.bad span:nth-child(1) { background: #ff4d63; box-shadow: 0 0 10px #ff4d63; }
+.verdict h3 { font-size: 16px; }
+.verdict p { margin: 2px 0 0; color: var(--fg-2); font-size: 13px; }
+.layers { list-style: none; margin: 0; padding: 6px 0; }
+.layer { display: grid; grid-template-columns: 12px minmax(0,1fr) auto; gap: 12px; align-items: center; padding: 10px 16px; }
+.layer + .layer { border-top: 1px solid var(--line); }
+.layer .st { width: 12px; height: 12px; border-radius: 50%; }
+.layer.ok .st { background: var(--ok); box-shadow: 0 0 0 4px var(--ok-soft); }
+.layer.warn .st { background: var(--warn); box-shadow: 0 0 0 4px var(--warn-soft); }
+.layer.bad .st { background: var(--bad); box-shadow: 0 0 0 4px var(--bad-soft); }
+.layer.skip .st { background: var(--fg-3); opacity: .5; }
+.layer.skip .nm { color: var(--fg-3); }
+.layer .nm { font-weight: 600; font-size: 13.5px; }
+.layer .ds { font-size: 12px; color: var(--fg-3); }
+.layer .vl { font: 500 13px var(--f-mono); font-variant-numeric: tabular-nums; text-align: right; }
+.metrics { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 1px; background: var(--line); border-radius: 0 0 var(--r) var(--r); overflow: hidden; }
+.metric { background: var(--surface); padding: 14px 16px; }
+.metric .k { font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--fg-3); font-weight: 600; }
+.metric .v { font: 700 22px var(--f-display); font-variant-numeric: tabular-nums; margin-top: 2px; }
+.metric .h { font-size: 12px; color: var(--fg-3); }
+.bar { height: 6px; background: var(--bg-soft); border-radius: 99px; margin-top: 8px; overflow: hidden; }
+.bar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--violet), var(--blue)); }
+.ent-diff { padding: 12px 16px 16px; display: grid; gap: 12px; }
+.ent-diff .row .lbl { font: 600 11px var(--f-body); letter-spacing: .12em; text-transform: uppercase; color: var(--fg-3); margin-bottom: 6px; }
+.warnings { margin: 0; padding: 0 16px 16px 34px; color: var(--fg-2); font-size: 13px; display: grid; gap: 4px; }
+
+/* Suggestions */
+.suggest { margin-top: 18px; display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
+.sug { text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: var(--r); padding: 14px; display: grid; gap: 6px; transition: border-color .15s, transform .15s; }
+.sug:hover { border-color: var(--violet); transform: translateY(-2px); }
+.sug .cat { font: 500 11px var(--f-mono); color: var(--blue); }
+.sug b { font-family: var(--f-display); font-size: 14px; }
+.sug span { font-size: 12.5px; color: var(--fg-3); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* How it works */
+.page-head { display: grid; gap: 8px; margin-bottom: 22px; max-width: 760px; }
+.page-head h2 { font-size: clamp(26px, 3.4vw, 38px); font-weight: 800; }
+.page-head p { margin: 0; color: var(--fg-2); font-size: 15px; }
+.pipeline { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 12px; position: relative; }
+.stage { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: grid; gap: 8px; align-content: start; position: relative; box-shadow: var(--shadow); }
+.stage .num { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; font: 700 13px var(--f-display); color: #fff; background: linear-gradient(135deg, var(--violet), var(--blue)); }
+.stage h3 { font-size: 15px; }
+.stage p { margin: 0; font-size: 13px; color: var(--fg-2); }
+.stage .techs { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+.stage .techs span { font: 500 11px var(--f-mono); padding: 2px 7px; border-radius: 6px; background: var(--blue-soft); color: var(--blue); }
+.loop-note { margin-top: 12px; border: 1px dashed var(--violet); border-radius: var(--r); padding: 12px 16px; color: var(--fg-2); font-size: 13px; display: flex; gap: 10px; align-items: center; background: var(--violet-soft); }
+.loop-note svg { width: 20px; height: 20px; color: var(--violet); flex: none; }
+.cols { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; margin-top: 22px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; }
+.card h3 { font-size: 15px; margin-bottom: 6px; }
+.card p, .card li { font-size: 13px; color: var(--fg-2); margin: 0; }
+.card ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.faq { margin-top: 22px; display: grid; gap: 8px; max-width: 820px; }
+.faq details { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; }
+.faq summary { font-weight: 600; cursor: pointer; }
+.faq p { margin: 8px 0 0; color: var(--fg-2); font-size: 13.5px; }
+code { font: 12.5px var(--f-mono); background: var(--bg-soft); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; }
+
+/* Team */
+.team { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 14px; }
+.member { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 20px 16px; display: grid; justify-items: center; text-align: center; gap: 8px; box-shadow: var(--shadow); transition: transform .2s; }
+.member:hover { transform: translateY(-3px); }
+.member .avatar { width: 68px; height: 68px; font-size: 22px; }
+.member h3 { font-size: 15px; }
+.member .role { font-size: 12.5px; color: var(--violet); font-weight: 600; }
+.member p { margin: 0; font-size: 12.5px; color: var(--fg-3); }
+.uni { margin-top: 18px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; background: linear-gradient(90deg, var(--violet-soft), var(--blue-soft)); border-radius: var(--r); padding: 18px 20px; }
+.uni svg { width: 44px; height: 44px; flex: none; color: var(--violet); }
+.uni b { font-family: var(--f-display); font-size: 16px; display: block; }
+.uni span { color: var(--fg-2); font-size: 13px; }
+
+footer.foot { border-top: 1px solid var(--line); margin-top: auto; padding-block: 16px; padding-left: 28px; padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; color: var(--fg-3); font-size: 12px; }
+footer.foot a { color: var(--fg-2); text-decoration: none; margin-left: 14px; }
+footer.foot a:hover { color: var(--violet); }
+
+.toast { position: fixed; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translate(-50%, 20px); background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-weight: 500; opacity: 0; pointer-events: none; transition: .25s; z-index: 50; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.modal-bg { position: fixed; inset: 0; background: rgba(14,12,34,.45); display: grid; place-items: center; z-index: 40; padding: 16px; }
+.modal { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px; width: min(460px, 100%); display: grid; gap: 12px; box-shadow: var(--shadow); }
+.modal h3 { font-size: 17px; }
+.modal label { display: grid; gap: 4px; font-size: 13px; font-weight: 500; }
+.modal input { border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; background: var(--bg-soft); }
+.modal .row { display: flex; gap: 8px; justify-content: flex-end; }
+.modal .hint { font-size: 12px; color: var(--fg-3); margin: 0; }
+
+@media (max-width: 1080px) {
+  .pipeline { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .team { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .report, .workspace { grid-template-columns: minmax(0,1fr); }
+}
+@media (max-width: 860px) {
+  .app { grid-template-columns: minmax(0,1fr); }
+  .side { position: fixed; z-index: 30; left: 0; top: 0; width: 290px; transform: translateX(-100%); transition: transform .25s; box-shadow: var(--shadow); padding-top: calc(18px + env(safe-area-inset-top, 0px)); }
+  .side.open { transform: none; }
+  .icon-btn.menu-btn { display: inline-flex; }
+  .hero { grid-template-columns: minmax(0,1fr); }
+  .art { max-width: 380px; width: 100%; margin: 0 auto; }
+  .suggest, .cols { grid-template-columns: minmax(0,1fr); }
+  .view, .top, footer.foot { padding-left: max(16px, env(safe-area-inset-left, 0px)); }
+  .top .hide-sm { display: none; }
+}
+@media (max-width: 480px) {
+  .pipeline, .team, .metrics { grid-template-columns: minmax(0,1fr); }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="side" id="side">
+    <a class="brand" href="#inicio">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7b3cf6"/><stop offset="1" stop-color="#2f5bff"/></linearGradient></defs><rect x="2" y="7" width="36" height="28" rx="11" fill="url(#lg)"/><rect x="8" y="13" width="24" height="15" rx="7" fill="#16133a"/><circle cx="15" cy="20.5" r="2.4" fill="#8fe7ff"/><circle cx="25" cy="20.5" r="2.4" fill="#8fe7ff"/><line x1="20" y1="7" x2="20" y2="2.5" stroke="#7b3cf6" stroke-width="2.4" stroke-linecap="round"/><circle cx="20" cy="2.5" r="2.3" fill="#2f5bff"/></svg>
+      <div><b>AbstractBot</b><small>Paperiza con evidencia</small></div>
+    </a>
+    <button class="btn-new" id="newChat"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Nueva transformación</button>
+    <label class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="searchHist" placeholder="Buscar conversaciones…" aria-label="Buscar conversaciones"><kbd>/</kbd></label>
+    <nav class="nav" id="nav">
+      <a href="#inicio" data-view="inicio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h7"/></svg>Paperizar</a>
+      <a href="#como-funciona" data-view="como-funciona"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="12" r="2.5"/><circle cx="19" cy="6" r="2.5"/><circle cx="19" cy="18" r="2.5"/><path d="M7.3 11 16.7 7M7.3 13l9.4 4"/></svg>Cómo funciona</a>
+      <a href="#equipo" data-view="equipo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><circle cx="17.5" cy="9" r="2.6"/><path d="M17 14.6c2.4.2 4 1.8 4.6 4.6"/></svg>Quiénes somos</a>
+    </nav>
+    <h4>Conversaciones recientes <button id="clearHist">Borrar todo</button></h4>
+    <div class="history" id="history"></div>
+    <div class="side-foot">
+      <div class="privacy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 4.5 6v5.5c0 4.6 3.1 8.4 7.5 9.5 4.4-1.1 7.5-4.9 7.5-9.5V6L12 3Z"/><path d="m8.8 12 2.2 2.2 4.3-4.4"/></svg><div><b>Tu texto no sale de tu equipo.</b> El modelo corre en local, sin ChatGPT ni APIs comerciales.</div></div>
+      <div class="user"><div class="avatar">IN</div><div style="min-width:0"><div class="n">Investigador/a</div><div class="e">Plan académico · local</div></div></div>
+    </div>
+  </aside>
+
+  <!-- ================= MAIN ================= -->
+  <div class="main">
+    <header class="top">
+      <button class="icon-btn menu-btn" id="menuBtn" aria-label="Abrir menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+      <span class="chip demo" id="statusChip" title="Estado del servidor local"><span class="dot"></span><span id="statusText">Comprobando servidor…</span></span>
+      <span class="chip hide-sm" title="Modelo definido en configs/generacion.yaml">Modelo <b id="modelName">Qwen2.5-3B-Instruct</b></span>
+      <span class="spacer"></span>
+      <span class="counter" title="Usuarios que han usado AbstractBot"><span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7L12 3Z"/></svg></span>Eres la persona <b id="userNum">#53.000</b></span>
+      <button class="icon-btn" id="settingsBtn" title="Configurar servidor" aria-label="Configurar servidor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg></button>
+      <button class="icon-btn" id="themeBtn" title="Cambiar tema" aria-label="Cambiar tema"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg></button>
+    </header>
+
+    <!-- ===== VIEW: INICIO ===== -->
+    <section class="view" id="view-inicio">
+      <div class="hero">
+        <div>
+          <div class="eyebrow">AbstractBot · Maestría en Inteligencia Artificial</div>
+          <h1>Tu abstract, en <span class="grad-text">registro académico</span>, sin perder un solo dato.</h1>
+          <div class="subtitle">Herramienta de procesamiento de lenguaje natural para transferencia de estilo académico</div>
+          <p class="lead">Pega el borrador informal del resumen de tu artículo. AbstractBot reconoce con NER las cifras, unidades, modelos, datasets y hardware, los protege durante la reescritura y te muestra con métricas qué se conservó.</p>
+          <div class="features">
+            <button class="feat" data-goto="como-funciona"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 7h16M4 12h10M4 17h7"/></svg></i>NER MEASURE + TECH</button>
+            <button class="feat" data-goto="como-funciona"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 3 4.5 6v5.5c0 4.6 3.1 8.4 7.5 9.5 4.4-1.1 7.5-4.9 7.5-9.5V6L12 3Z"/></svg></i>100 % local y privado</button>
+            <button class="feat" data-goto="como-funciona"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg></i>Semáforo de verificación</button>
+          </div>
+        </div>
+        <div class="art" aria-hidden="true">
+          <div class="blob"></div>
+          <!-- Cerebro científico -->
+          <svg class="brain" viewBox="0 0 220 200">
+            <defs>
+              <linearGradient id="gb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8b5cf6"/><stop offset="1" stop-color="#2f5bff"/></linearGradient>
+              <radialGradient id="glow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#8fa8ff" stop-opacity=".55"/><stop offset="1" stop-color="#8fa8ff" stop-opacity="0"/></radialGradient>
+            </defs>
+            <circle cx="110" cy="100" r="96" fill="url(#glow)"/>
+            <ellipse cx="110" cy="100" rx="98" ry="34" fill="none" stroke="#6b3cf6" stroke-opacity=".35" stroke-width="1.4" transform="rotate(-18 110 100)"/>
+            <path d="M108 40c-10-14-36-14-44 2-16-2-28 12-24 28-14 8-14 30 0 38-4 16 10 30 26 28 6 14 30 18 42 6Z" fill="url(#gb)"/>
+            <path d="M112 40c10-14 36-14 44 2 16-2 28 12 24 28 14 8 14 30 0 38 4 16-10 30-26 28-6 14-30 18-42 6Z" fill="url(#gb)" opacity=".88"/>
+            <g fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="2.6" stroke-linecap="round">
+              <path d="M110 44v96"/>
+              <path d="M66 62c10 0 16 8 16 16M52 92c14-4 26 2 30 14M70 124c6-8 18-10 26-4M96 56c-4 10 2 18 10 20"/>
+              <path d="M154 62c-10 0-16 8-16 16M168 92c-14-4-26 2-30 14M150 124c-6-8-18-10-26-4M124 56c4 10-2 18-10 20"/>
+            </g>
+            <g fill="#fff"><circle cx="82" cy="78" r="4"/><circle cx="138" cy="78" r="4"/><circle cx="96" cy="120" r="4"/><circle cx="124" cy="120" r="4"/><circle cx="82" cy="106" r="3"/><circle cx="138" cy="106" r="3"/></g>
+            <g stroke="#2f5bff" stroke-width="1.6" fill="none"><path d="M180 70h22v-18"/><path d="M40 128H18v18"/></g>
+            <g fill="#2f5bff"><circle cx="202" cy="50" r="5"/><circle cx="18" cy="148" r="5"/></g>
+            <circle cx="30" cy="40" r="5" fill="#6b3cf6"/><circle cx="196" cy="160" r="4" fill="#6b3cf6"/>
+            <path d="M188 24l3 7 7 3-7 3-3 7-3-7-7-3 7-3Z" fill="#6b3cf6"/>
+          </svg>
+          <!-- Bot -->
+          <svg class="bot" viewBox="0 0 220 240">
+            <defs>
+              <linearGradient id="gr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7b3cf6"/><stop offset="1" stop-color="#2f5bff"/></linearGradient>
+              <linearGradient id="gw" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e9e6ff"/></linearGradient>
+            </defs>
+            <ellipse cx="110" cy="230" rx="66" ry="7" fill="#2f5bff" opacity=".12"/>
+            <line x1="110" y1="38" x2="110" y2="14" stroke="url(#gr)" stroke-width="6" stroke-linecap="round"/>
+            <circle cx="110" cy="12" r="9" fill="url(#gr)"/>
+            <rect x="34" y="38" width="152" height="112" rx="44" fill="url(#gw)" stroke="url(#gr)" stroke-width="5"/>
+            <rect x="22" y="76" width="16" height="38" rx="8" fill="url(#gr)"/>
+            <rect x="182" y="76" width="16" height="38" rx="8" fill="url(#gr)"/>
+            <rect x="54" y="60" width="112" height="70" rx="30" fill="#16133a"/>
+            <path d="M80 96c4-9 16-9 20 0M120 96c4-9 16-9 20 0" stroke="#8fe7ff" stroke-width="6" stroke-linecap="round" fill="none"/>
+            <path d="M96 112c8 6 20 6 28 0" stroke="#8fe7ff" stroke-width="4" stroke-linecap="round" fill="none"/>
+            <rect x="62" y="156" width="96" height="66" rx="28" fill="url(#gw)" stroke="url(#gr)" stroke-width="5"/>
+            <rect x="86" y="172" width="48" height="30" rx="10" fill="url(#gr)"/>
+            <text x="110" y="193" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" fill="#fff">NER</text>
+            <path d="M160 176c18-6 30-22 32-40" stroke="url(#gr)" stroke-width="12" stroke-linecap="round" fill="none"/>
+            <circle cx="193" cy="132" r="11" fill="url(#gr)"/>
+            <path d="M60 178c-14 4-22 16-22 30" stroke="url(#gr)" stroke-width="12" stroke-linecap="round" fill="none"/>
+          </svg>
+          <div class="bubble">52.9nJ → protegido ✓</div>
+        </div>
+      </div>
+
+      <div class="workspace">
+        <!-- Input -->
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Borrador</h3>
+            <div class="seg" role="tablist" aria-label="Tipo de transformación">
+              <button class="on" id="modePaper" data-mode="paperizar">Paperizar</button>
+              <button id="modeSimple" data-mode="simplificar" disabled title="Fuera del alcance de esta versión">Simplificar <span class="soon">pronto</span></button>
+            </div>
+            <span class="meta" id="inCount">0 palabras</span>
+          </div>
+          <textarea id="inputText" placeholder="Pega aquí el resumen informal de tu artículo, en inglés…" aria-label="Texto de entrada"></textarea>
+          <div class="protected" id="protBox" hidden>
+            <div class="lbl">Términos protegidos por el NER
+              <span class="legend"><i style="background:var(--violet-soft);border:1px solid var(--violet)"></i>TECH</span>
+              <span class="legend"><i style="background:var(--blue-soft);border:1px solid var(--blue)"></i>MEASURE</span>
+            </div>
+            <div class="tags" id="protTags"></div>
+          </div>
+          <div class="tools">
+            <button class="tool" id="sampleBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg>Ejemplo</button>
+            <button class="tool" id="uploadBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg>Subir .txt</button>
+            <input type="file" id="fileIn" accept=".txt,.md" hidden>
+            <button class="tool toggle" id="protectBtn" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Proteger términos</button>
+            <label class="tool">Reintentos <select id="retries" aria-label="Máximo de reintentos"><option>0</option><option>1</option><option selected>2</option><option>3</option></select></label>
+            <button class="tool" id="clearBtn" title="Limpiar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>
+            <button class="send" id="runBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Paperizar</button>
+          </div>
+        </div>
+
+        <!-- Output -->
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Versión académica</h3>
+            <span class="meta" id="outMeta">—</span>
+          </div>
+          <div class="output placeholder" id="output">El texto académico aparecerá aquí, con los términos protegidos resaltados.</div>
+          <div class="steps" id="steps" hidden></div>
+          <div class="out-actions">
+            <button class="tool" id="copyBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a1 1 0 0 1 1-1h10"/></svg>Copiar</button>
+            <button class="tool" id="dlBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v12M7 11l5 5 5-5M4 20h16"/></svg>Descargar reporte</button>
+            <button class="tool" id="regenBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>Regenerar</button>
+            <span class="feedback">
+              <button class="tool" data-fb="up" aria-label="Buena respuesta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 10v11H4V10h3Zm0 0 4-7a2 2 0 0 1 2 2v4h5.5a2 2 0 0 1 2 2.3l-1.3 7.5a2 2 0 0 1-2 1.7H7"/></svg></button>
+              <button class="tool" data-fb="down" aria-label="Mala respuesta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 14V3h3v11h-3Zm0 0-4 7a2 2 0 0 1-2-2v-4H5.5a2 2 0 0 1-2-2.3l1.3-7.5a2 2 0 0 1 2-1.7H17"/></svg></button>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Report -->
+      <div class="report" id="report" hidden>
+        <div class="panel">
+          <div class="verdict"><div class="light" id="light"><span></span><span></span><span></span></div><div><h3 id="verdictT">—</h3><p id="verdictP"></p></div></div>
+          <ul class="layers" id="layers"></ul>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Métricas</h3><span class="meta" id="attempts"></span></div>
+          <div class="ent-diff" id="entDiff"></div>
+          <ul class="warnings" id="warnings"></ul>
+          <div class="metrics" id="metrics"></div>
+        </div>
+      </div>
+
+      <div class="suggest" id="suggest"></div>
+    </section>
+
+    <!-- ===== VIEW: COMO FUNCIONA ===== -->
+    <section class="view" id="view-como-funciona" hidden>
+      <div class="page-head">
+        <div class="eyebrow">Cómo funciona</div>
+        <h2>Cinco pasos entre tu borrador y un abstract <span class="grad-text">verificable</span></h2>
+        <p>AbstractBot no se limita a que el texto “suene bien”. Primero identifica lo que no puede cambiar, reescribe con esas restricciones y luego comprueba capa por capa que nada se perdió ni se inventó.</p>
+      </div>
+      <div class="pipeline">
+        <div class="stage"><div class="num">1</div><h3>Preprocesamiento</h3><p>Limpieza del texto e inventario de términos y cifras a proteger.</p><div class="techs"><span>pandas</span><span>spaCy</span><span>regex</span></div></div>
+        <div class="stage"><div class="num">2</div><h3>Transformación</h3><p>Prepara la entrada: tokenización e instrucción con los términos protegidos.</p><div class="techs"><span>HF Transformers</span><span>Tokenizador</span></div></div>
+        <div class="stage"><div class="num">3</div><h3>Generación</h3><p>El LLM local reescribe en registro académico con restricción léxica.</p><div class="techs"><span>PyTorch</span><span>Restricción léxica</span></div></div>
+        <div class="stage"><div class="num">4</div><h3>Verificación</h3><p>Contenido, registro y voz: nada perdido, nada inventado y el registro sí cambió.</p><div class="techs"><span>spaCy + regex</span><span>Embeddings + NLI</span><span>textstat</span><span>TF-IDF</span></div></div>
+        <div class="stage"><div class="num">5</div><h3>Decisión</h3><p>Semáforo por capa y reporte junto con el texto resultante.</p><div class="techs"><span>Python</span><span>FastAPI</span></div></div>
+      </div>
+      <div class="loop-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg><div>Si la verificación falla, AbstractBot vuelve al paso 3 con restricciones más estrictas, hasta el máximo de reintentos que elijas. Si aun así falla, entrega el texto con advertencias para que tú decidas.</div></div>
+
+      <div class="cols">
+        <div class="card"><h3>Qué reconoce el NER</h3><ul><li><b>MEASURE</b>: cifras con unidad (<code>52.9nJ</code>, <code>100MHz</code>), porcentajes y cantidades como <code>3.4 million</code>.</li><li><b>TECH</b>: modelos, datasets, hardware, métricas y siglas (<code>MobileNetV2</code>, <code>PYNQ-Z1</code>, <code>F1-score</code>).</li></ul></div>
+        <div class="card"><h3>Qué mide el reporte</h3><ul><li>Cobertura y precisión de entidades.</li><li>Unidades preservadas.</li><li>Similitud semántica y NLI.</li><li>Legibilidad Flesch antes y después.</li></ul></div>
+        <div class="card"><h3>Uso responsable</h3><p>Opera entre pulir el lenguaje y la edición extensa, según la política de IA de Nature Portfolio. El reporte te permite auditar la salida; la responsabilidad del contenido y la declaración del uso de IA siguen siendo tuyas.</p></div>
+      </div>
+
+      <div class="faq">
+        <details open><summary>¿Mi texto se envía a algún servicio externo?</summary><p>No. La página habla solo con el servidor de Python que corre en tu computador (<code>localhost</code>). El modelo de lenguaje está descargado localmente.</p></details>
+        <details><summary>¿En qué idioma funciona?</summary><p>Esta versión trabaja con abstracts de ingeniería en inglés. La simplificación (despaperizar) y el español quedan para una versión futura.</p></details>
+        <details><summary>¿Qué significa cada color del semáforo?</summary><p>Verde: todas las capas pasaron. Amarillo: alguna capa quedó cerca del umbral y conviene revisar. Rojo: se perdió o se inventó un dato, o el registro no cambió.</p></details>
+        <details><summary>¿Cómo conecto mi propio servidor?</summary><p>Usa el botón de configuración en la barra superior y escribe la URL del servidor (por defecto <code>http://localhost:8000</code>). Si no responde, la app pasa a modo demo.</p></details>
+      </div>
+    </section>
+
+    <!-- ===== VIEW: EQUIPO ===== -->
+    <section class="view" id="view-equipo" hidden>
+      <div class="page-head">
+        <div class="eyebrow">Quiénes somos</div>
+        <h2>El equipo detrás de <span class="grad-text">AbstractBot</span></h2>
+        <p>Somos estudiantes de la Maestría en Inteligencia Artificial. Construimos AbstractBot para que quien escribe en inglés técnico tenga una alternativa privada y verificable a los LLM comerciales.</p>
+      </div>
+      <div class="team">
+        <div class="member"><div class="avatar">LR</div><h3>Laura Sofía Rodríguez Pérez</h3><div class="role">Datos y evaluación</div><p>Maestría en Inteligencia Artificial</p></div>
+        <div class="member"><div class="avatar">JP</div><h3>Jesús Alberto Puenayan Quiceno</h3><div class="role">Modelo de generación</div><p>Maestría en Inteligencia Artificial</p></div>
+        <div class="member"><div class="avatar">CT</div><h3>Cristian David Triana</h3><div class="role">NER y verificación</div><p>Maestría en Inteligencia Artificial</p></div>
+        <div class="member"><div class="avatar">JM</div><h3>Jeisson Sebastián Morales Herrera</h3><div class="role">Interfaz y despliegue</div><p>Maestría en Inteligencia Artificial</p></div>
+      </div>
+      <div class="uni">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 9 12 4l10 5-10 5L2 9Z"/><path d="M6 11v5c2 2 10 2 12 0v-5M22 9v6"/></svg>
+        <div><b>Pontificia Universidad Javeriana</b><span>Maestría en Inteligencia Artificial · Bogotá D.C., Colombia · 2026</span></div>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <span>© 2026 AbstractBot · Herramienta de PLN para transferencia de estilo académico</span>
+      <span><a href="#como-funciona">Cómo funciona</a><a href="#equipo">Equipo</a><a href="#como-funciona" id="footPrivacy">Privacidad</a></span>
+    </footer>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+<div class="modal-bg" id="settingsModal" hidden>
+  <div class="modal" role="dialog" aria-labelledby="setT">
+    <h3 id="setT">Servidor de AbstractBot</h3>
+    <label>URL del servidor local<input id="apiUrl" value="http://localhost:8000"></label>
+    <p class="hint">La app llama a <code>GET /api/health</code> y <code>POST /api/paperizar</code>. Si el servidor no responde, usa el modo demo.</p>
+    <div class="row"><button class="tool" id="setCancel">Cancelar</button><button class="send" id="setSave" style="margin:0">Guardar y probar</button></div>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   AbstractBot · front-end
+   Contrato con el backend (FastAPI/Flask):
+   GET  {API}/api/health      -> { status: "ok", model: "..." }
+   POST {API}/api/paperizar   body { text, mode, protect, max_retries, model }
+     -> { output, entities: { input:[{text,label}], output:[...], lost:[...], added:[...] },
+          units_changed:[...], flesch:{ input, output, in_range },
+          similarity:{ semantic, nli, tfidf }, layers:[{ id, name, status, value, detail }],
+          attempts, warnings:[...] }
+   Si el servidor no responde, la app usa un modo demo en el navegador.
+   ===================================================================== */
+const $ = s => document.querySelector(s);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+};
+// Si la página la sirve server.py (http://localhost:8000), la API está en el mismo origen.
+let API = location.protocol.startsWith('http') && /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? location.origin : store.get('ab_api', 'http://localhost:8000');
+let online = false;
+let current = null;           // conversación activa
+let lastInput = '';
+
+/* ---------- Ejemplos ---------- */
+/* Ejemplos reales: borradores informales de pairs.jsonl (G1, nivel 2) y resúmenes divulgativos del parquet de entrenamiento (eLife).
+   Con el servidor encendido se reemplazan por GET /api/examples. */
+let SAMPLES = [{"cat": "eess.SP · signal processing", "title": "Bit-interleaved coded modulation (BICM) is widely…", "text": "Hey there! We're looking at Bit-interleaved coded modulation (BICM) in MIMO wireless systems, and it's pretty key. But, we hit a snag – when we just pass along soft info for each bit without the bit-to-bit link, we miss some of the juicy correlation stuff. This messes with the one-shot receivers' performance. IDD helps, but it's like, super complex and slow. So, we're cooking up something called COrrelation-Informed Logits (COIL). It's like a hybrid between soft info and these special bit-twin logits, which keeps the correlation in check. We've plugged these logits into a standard channel decoder, making it smart about bit-correlation without needing multiple rounds of IDD. Testing it out on a MIMO-BICM system with low-density parity-check code, COIL's looking good against usual receivers. For a 4x4 MIMO OFDM system, COIL is nailing it, beating the standard one-shot unbiased LMMSE receiver by 1.3dB and getting close to the four-iteration IDD, all while doing it in just one pass. Pretty sweet, huh?", "source": "pairs.jsonl (rt_000_G1_L2)"}, {"cat": "eess.SY · systems and control", "title": "Heterogeneous air-ground teams can use aerial…", "text": "In our systems and control field, we're tackling the issue of when our UGV needs a lift and what the UAV should look at. We're putting together a plan that's all about the map uncertainties and how they mess with our UGV's navigation. Basically, we score different map scenarios and pick the one that's gonna make our UGV's path smoother. Once we've got that map, we get aerial data, mix it in, and come up with a new plan. We're doing things differently, focusing on if resolving these uncertainties actually helps our UGV move better. In our 180 trial runs, we nailed 98.9% of the goals and cut down our UAV flight time by a massive 87.7%. On average, every second we save in flight time means we're saving our UGV 2.94 seconds on the ground. Plus, our field tests over 2 km show that our method's really effective at fixing things when there's uncertainty.", "source": "pairs.jsonl (rt_018_G1_L2)"}, {"cat": "eess.IV · image and video processing", "title": "Monitoring the relative radiometric stability of…", "text": "We dove into the world of image and video processing for the European Space Agency's BIOMASS P-band SAR, where keeping things steady's key. We wanted to suss out how we could tell the difference between instrument changes and actual scene changes without needing extra calibration gear. Our go-to method, the PSCal thingy, uses PSs to estimate how much the radiometric stuff needs adjusting. We ran some simulations to check how well it works, especially when we only got a handful of data chunks, and we found we really need to be picky about our selection thresholds. When we tested this out in Nairobi, we stumbled upon a 1 dB oddity, which we think is due to some RFI issues. Most of the time, though, the changes we got were within 0.1 dB. Then we hit Cordoba, where we had twelve bits of info over eight months. Even with big scene and acquisition shape changes, we only saw about 0.1 dB variations. Our finds matched up with the BIOMASS CAL Transponder readings from New Norcia. So, it seems like our careful picking of P-band PSs could be a real game-changer for keeping track of radiometric shifts and spotting glitches.", "source": "pairs.jsonl (rt_028_G1_L2)"}, {"cat": "eLife · resumen divulgativo", "title": "Phase-amplitude coupling supports phase coding in human…", "text": "Electrocorticography, or ECoG, is a technique that is used to record the electrical activity of the brain via electrodes placed inside the skull. This electrical activity repeatedly rises and falls, and can therefore be represented as a series of waves. All waves have three basic properties: amplitude, frequency and phase. Amplitude describes the height of a wave's peaks (and the depth of its troughs), and frequency defines how many waves are produced per second. The phase of a wave changes from 0° to 360° between two consecutive peaks of that wave and then repeats, similar to the phases of the moon. Previous studies have shown that brain activity at different frequencies can interact.", "source": "train-00000-of-00001.parquet"}, {"cat": "eLife · resumen divulgativo", "title": "A promoter interaction map for cardiovascular disease…", "text": "Our genomes contain around 20, 000 different genes that code for instructions to create proteins and other important molecules. When changes, or mutations, occur within these genes, malfunctioning proteins that are damaging to the cell may be produced. Researchers of human genetics have tried to spot the genetic mutations that are associated with illnesses, for example heart diseases. However, they found that most of these mutations are actually located outside of genes, in the ‘non-coding’ areas that make up the majority of our genome. These mutations do not modify proteins directly, which makes it challenging to understand how they may be related to heart conditions.", "source": "train-00000-of-00001.parquet"}, {"cat": "eLife · resumen divulgativo", "title": "Conserved conformational selection mechanism of Hsp70…", "text": "Proteins are the workhorses of a cell and are involved in almost all biological processes. Newly made proteins need to ‘fold’ into precise three-dimensional shapes in order to carry out their roles. However, proteins sometimes fold incorrectly or unfold. These protein forms are not able to work effectively and in some cases may even cause diseases. Chaperone proteins help other proteins to fold correctly and are found in living organisms ranging in complexity from bacteria to humans. There are many different types of chaperones that play different roles inside cells. One, called Hsp70, binds to proteins that are incorrectly folded to help them to mature into their correct structures. However, it was not clear whether Hsp70 can also associate with the mature, correctly folded form of the proteins.", "source": "train-00000-of-00001.parquet"}];
+
+/* ---------- NER de demostración (reglas; el real es spaCy en el backend) ---------- */
+const UNITS = 'nJ|pJ|mJ|J|ms|us|µs|ns|s|W|mW|kW|V|mV|mA|A|Hz|kHz|MHz|GHz|KB|MB|GB|TB|fps|mm|cm|nm|km|m|kg|g|dB|dBm|mAh|GFLOPs|TFLOPs|M|B|K|x|×';
+function demoNER(text) {
+  const ents = [];
+  const add = (re, label) => { let m; while ((m = re.exec(text))) { const t = m[0].replace(/[.,;]$/, ''); ents.push({ text: t, label, start: m.index, end: m.index + t.length }); } };
+  add(new RegExp(`\\b\\d+(?:[.,]\\d+)?\\s?(?:%|(?:${UNITS})\\b|million|billion|thousand)`, 'g'), 'MEASURE');
+  add(/\b(?:[A-Z][A-Za-z]*\d[\w]*|[A-Za-z]+\d+[A-Za-z]*)(?:-[A-Za-z0-9]+)*\b/g, 'TECH');
+  add(/\b[A-Z][a-z]+(?:-[A-Z][A-Za-z0-9]+)+\b/g, 'TECH');
+  add(/\b[A-Z]{2,}[a-z]?s?(?:-[A-Za-z0-9]+)*\b/g, 'TECH');
+  add(/\b[A-Z][a-z]+[A-Z][A-Za-z]+\b/g, 'TECH');
+  add(/\b(?:Raspberry Pi \d|F1-score|real-time factor)\b/g, 'TECH');
+  add(/\b\d+\.\d+\b/g, 'MEASURE');
+  ents.sort((a, b) => a.start - b.start || (b.end - b.start) - (a.end - a.start));
+  const out = []; let last = -1;
+  for (const e of ents) if (e.start >= last) { out.push(e); last = e.end; }
+  return out;
+}
+const uniq = arr => [...new Map(arr.map(e => [e.text.toLowerCase(), e])).values()];
+
+/* ---------- Paperizador de demostración ---------- */
+const SWAPS = [
+  [/\bso basically,?\s*/gi, ''], [/\bhonestly,?\s*/gi, ''], [/\bkind of\b/gi, 'relatively'], [/\bpretty good\b/gi, 'satisfactory'],
+  [/\ba lot better\b/gi, 'substantially better'], [/\ba lot\b/gi, 'considerably'], [/\bstuff\b/gi, 'devices'], [/\bwe wanted to fix\b/gi, 'This work addresses'],
+  [/\bwe came up with\b/gi, 'This work proposes'], [/\bwe took\b/gi, 'The study adapts'], [/\bwe built\b/gi, 'the authors designed'], [/\bwe got\b/gi, 'yielding'],
+  [/\bwe tested it on\b/gi, 'it was evaluated on'], [/\btested it on\b/gi, 'validated it on'], [/\bour\b/gi, 'The proposed'], [/\bwe cut\b/gi, 'reduces'],
+  [/\bit's\b/gi, 'it is'], [/\bthat's\b/gi, 'which is'], [/\baround\b/gi, 'approximately'], [/\blike\b(?=\s+\d)/gi, 'approximately'], [/\blike\b/gi, 'such as'], [/\bgets\b/gi, 'achieves'],
+  [/\bbeats most methods\b/gi, 'outperforms most methods'], [/\bmade it\b/gi, 'rendered it'], [/\bdown to\b/gi, 'reaching'], [/\bwhich is satisfactory\b/gi, ''],
+  [/\bThen\b/g, 'Subsequently,'], [/\band it ran\b/gi, 'achieving'], [/\bwe\b/gi, 'the authors'], [/\bonly\b/gi, 'with only']
+];
+function demoParaphrase(text) {
+  let t = text.trim();
+  for (const [re, r] of SWAPS) t = t.replace(re, r);
+  t = t.replace(/\s+,/g, ',').replace(/,\s*\./g, '.').replace(/\s{2,}/g, ' ').replace(/(^|[.!?]\s+)([a-z])/g, (m, a, b) => a + b.toUpperCase());
+  if (!/[.!?]$/.test(t)) t += '.';
+  return t;
+}
+function syllables(w) { w = w.toLowerCase().replace(/[^a-z]/g, ''); if (w.length <= 3) return 1; w = w.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '').replace(/^y/, ''); const m = w.match(/[aeiouy]{1,2}/g); return m ? m.length : 1; }
+function flesch(t) { const words = t.match(/[A-Za-z]+/g) || []; const sents = Math.max(1, (t.match(/[.!?]+/g) || []).length); const syl = words.reduce((a, w) => a + syllables(w), 0); if (!words.length) return 0; return +(206.835 - 1.015 * (words.length / sents) - 84.6 * (syl / words.length)).toFixed(1); }
+function cosine(a, b) { const v = s => { const m = {}; (s.toLowerCase().match(/[a-z0-9.]+/g) || []).forEach(w => m[w] = (m[w] || 0) + 1); return m; }; const A = v(a), B = v(b); let d = 0, na = 0, nb = 0; for (const k in A) { na += A[k] ** 2; if (B[k]) d += A[k] * B[k]; } for (const k in B) nb += B[k] ** 2; return na && nb ? d / Math.sqrt(na * nb) : 0; }
+
+function demoPipeline(text, opts) {
+  const inEnts = uniq(demoNER(text));
+  const output = demoParaphrase(text);
+  const outEnts = uniq(demoNER(output));
+  const has = (list, e) => list.some(x => x.text.toLowerCase() === e.text.toLowerCase() || x.text.toLowerCase().includes(e.text.toLowerCase()));
+  const lost = inEnts.filter(e => !output.toLowerCase().includes(e.text.toLowerCase()));
+  const added = outEnts.filter(e => !has(inEnts, e) && !text.toLowerCase().includes(e.text.toLowerCase()));
+  const cov = inEnts.length ? 1 - lost.length / inEnts.length : 1;
+  const prec = outEnts.length ? 1 - added.length / outEnts.length : 1;
+  const fIn = flesch(text), fOut = flesch(output);
+  const sem = Math.min(0.99, 0.55 + cosine(text, output) * 0.45);
+  const nli = Math.min(0.99, 0.82 + cosine(text, output) * 0.15);
+  const copy = cosine(text, output);
+  const inRange = fOut >= 0 && fOut <= 50;
+  const st = (ok, warn) => ok ? 'ok' : warn ? 'warn' : 'bad';
+  const layers = [
+    { id: 'ner', name: 'Entidades preservadas', detail: 'NER MEASURE + TECH', value: `${inEnts.length - lost.length}/${inEnts.length}`, status: st(cov >= .95, cov >= .85) },
+    { id: 'added', name: 'Nada inventado', detail: 'Precisión de entidades', value: prec.toFixed(2), status: st(prec >= .95, prec >= .85) },
+    { id: 'units', name: 'Unidades intactas', detail: 'Cifra + unidad idénticas', value: lost.some(e => e.label === 'MEASURE') ? 'cambió' : 'idénticas', status: lost.some(e => e.label === 'MEASURE') ? 'bad' : 'ok' },
+    { id: 'sem', name: 'Similitud semántica', detail: 'Embeddings (coseno)', value: sem.toFixed(2), status: st(sem >= .85, sem >= .75) },
+    { id: 'nli', name: 'Implicación (NLI)', detail: 'Entrada ⇔ salida', value: nli.toFixed(2), status: st(nli >= .85, nli >= .7) },
+    { id: 'reg', name: 'Registro académico', detail: 'Flesch baja y queda en rango', value: `${fIn} → ${fOut}`, status: st(fOut < fIn && inRange, fOut < fIn) },
+    { id: 'copy', name: 'No es una copia', detail: 'Solapamiento TF-IDF', value: copy.toFixed(2), status: st(copy < .9, copy < .97) }
+  ];
+  const warnings = [];
+  lost.forEach(e => warnings.push(`Revisa "${e.text}": estaba en tu borrador y no aparece en la salida.`));
+  added.forEach(e => warnings.push(`"${e.text}" aparece en la salida pero no en tu borrador.`));
+  if (!(fOut < fIn)) warnings.push('La legibilidad no bajó: el registro puede seguir siendo informal.');
+  if (copy >= .9) warnings.push('La salida es muy parecida a la entrada; el cambio de estilo es leve.');
+  if (!opts.protect) warnings.push('La protección de términos estaba desactivada.');
+  return { output, entities: { input: inEnts, output: outEnts, lost, added }, units_changed: [], flesch: { input: fIn, output: fOut, in_range: inRange },
+    similarity: { semantic: sem, nli, tfidf: copy }, coverage: cov, precision: prec, layers, attempts: 1, warnings, demo: true };
+}
+
+/* ---------- Conexión con el backend ---------- */
+async function checkHealth() {
+  const chip = $('#statusChip'), txt = $('#statusText');
+  try {
+    const ctrl = new AbortController(); const to = setTimeout(() => ctrl.abort(), 2500);
+    const r = await fetch(API + '/api/health', { signal: ctrl.signal }); clearTimeout(to);
+    if (!r.ok) throw 0; const j = await r.json().catch(() => ({}));
+    online = true; chip.className = 'chip live'; txt.textContent = 'Servidor local conectado'; if (j.model) $('#modelName').textContent = j.model;
+    loadExamples(); renderProtected($('#inputText').value);
+  } catch { online = false; chip.className = 'chip demo'; txt.textContent = 'Modo demo · servidor desconectado'; }
+}
+async function runPipeline(text, opts) {
+  if (online) {
+    const r = await fetch(API + '/api/paperizar', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, mode: 'paperizar', protect: opts.protect, max_retries: opts.retries, model: opts.model }) });
+    if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(j.detail || ('el servidor respondió ' + r.status)); }
+    return await r.json();
+  }
+  await sleep(300);
+  return demoPipeline(text, opts);
+}
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+/* ---------- Render ---------- */
+const esc = s => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function highlight(text, ents) {
+  const spans = [];
+  const sorted = [...ents].sort((a, b) => b.text.length - a.text.length);
+  for (const e of sorted) {
+    let i = 0, low = text.toLowerCase(), t = e.text.toLowerCase();
+    while (t && (i = low.indexOf(t, i)) !== -1) { const end = i + t.length; const wb = !/[a-z0-9]/i.test(text[i - 1] || '') && !/[a-z0-9]/i.test(text[end] || ''); if (wb && !spans.some(s => i < s.end && end > s.start)) spans.push({ start: i, end, label: e.label }); i = end; }
+  }
+  spans.sort((a, b) => a.start - b.start);
+  let html = '', p = 0;
+  for (const s of spans) { html += esc(text.slice(p, s.start)) + `<mark class="${s.label}">${esc(text.slice(s.start, s.end))}</mark>`; p = s.end; }
+  return html + esc(text.slice(p));
+}
+function tagsHTML(list, cls) { return list.length ? list.map(e => `<span class="tag ${cls || e.label}">${esc(e.text)}</span>`).join('') : '<span class="tag" style="color:var(--fg-3)">ninguna</span>'; }
+function words(t) { return (t.trim().match(/\S+/g) || []).length; }
+
+let nerTimer, nerSeq = 0;
+function renderProtected(text) {
+  paintProtected(text, uniq(demoNER(text)));
+  if (!online || !text.trim()) return;
+  clearTimeout(nerTimer); const seq = ++nerSeq;
+  nerTimer = setTimeout(async () => {   // NER híbrido real (spaCy) cuando el servidor está encendido
+    try { const r = await fetch(API + '/api/ner', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
+      const j = await r.json(); if (seq === nerSeq) paintProtected(text, j.entities || []); } catch {}
+  }, 400);
+}
+function paintProtected(text, ents) {
+  $('#protBox').hidden = !text.trim() || !ents.length;
+  $('#protTags').innerHTML = tagsHTML(ents);
+  $('#inCount').textContent = `${words(text)} palabras · ${ents.length} entidades`;
+}
+function renderResult(res, input) {
+  const out = $('#output'); out.classList.remove('placeholder');
+  out.innerHTML = highlight(res.output, res.entities.input || []);
+  $('#outMeta').textContent = `${words(res.output)} palabras` + (res.demo ? ' · demo' : '');
+  const statuses = res.layers.map(l => l.status).filter(s => s !== 'skip');
+  const worst = statuses.includes('bad') ? 'bad' : statuses.includes('warn') ? 'warn' : 'ok';
+  $('#light').className = 'light ' + worst;
+  $('#verdictT').textContent = { ok: 'Listo para usar', warn: 'Revisa antes de usar', bad: 'Hay datos que corregir' }[worst];
+  const okN = statuses.filter(s => s === 'ok').length;
+  $('#verdictP').textContent = `${okN} de ${statuses.length} capas en verde.` + (res.demo ? ' Resultado de demostración: conecta el servidor para usar el modelo real.' : '');
+  $('#layers').innerHTML = res.layers.map(l => `<li class="layer ${l.status}"><span class="st"></span><div><div class="nm">${esc(l.name)}</div><div class="ds">${esc(l.detail || '')}</div></div><div class="vl">${esc(String(l.value))}</div></li>`).join('');
+  $('#attempts').textContent = `intentos: ${res.attempts ?? 1}`;
+  const e = res.entities;
+  $('#entDiff').innerHTML = `<div class="row"><div class="lbl">Perdidas</div><div class="tags">${tagsHTML(e.lost || [], 'lost')}</div></div><div class="row"><div class="lbl">Añadidas</div><div class="tags">${tagsHTML(e.added || [], 'added')}</div></div>`;
+  $('#warnings').innerHTML = (res.warnings || []).map(w => `<li>${esc(w)}</li>`).join('');
+  const cov = res.coverage ?? (e.input?.length ? 1 - (e.lost?.length || 0) / e.input.length : 1);
+  const prec = res.precision ?? 1;
+  const m = [
+    ['Cobertura de entidades', (cov * 100).toFixed(0) + '%', 'meta ≥ 95 %', cov],
+    ['Precisión de entidades', (prec * 100).toFixed(0) + '%', 'meta ≥ 95 %', prec],
+    ['Similitud semántica', res.similarity?.semantic == null ? '—' : res.similarity.semantic.toFixed(2), 'vectores del modelo', res.similarity?.semantic ?? 0],
+    ['Flesch entrada → salida', `${res.flesch.input} → ${res.flesch.output}`, res.flesch.in_range ? 'en rango de abstracts reales' : 'fuera del rango de referencia', Math.max(0, Math.min(1, 1 - res.flesch.output / 100))]
+  ];
+  $('#metrics').innerHTML = m.map(([k, v, h, p]) => `<div class="metric"><div class="k">${k}</div><div class="v">${v}</div><div class="h">${h}</div><div class="bar"><i style="width:${(p * 100).toFixed(0)}%"></i></div></div>`).join('');
+  $('#report').hidden = false;
+}
+
+const STEP_NAMES = ['Preprocesamiento e inventario de términos', 'Transformación del prompt', 'Generación con el LLM local', 'Verificación por capas', 'Decisión y reporte'];
+async function animateSteps(promise) {
+  const box = $('#steps'); box.hidden = false; $('#output').hidden = true;
+  box.innerHTML = STEP_NAMES.map(n => `<div class="step"><span class="s"></span><span>${n}</span><span class="ms"></span></div>`).join('');
+  const els = [...box.children]; let done = false; let res, err;
+  promise.then(r => { res = r; done = true; }, e => { err = e; done = true; });
+  for (let i = 0; i < els.length; i++) {
+    els[i].className = 'step run'; const t0 = performance.now();
+    await sleep(i === 2 ? 650 : 320);
+    while (i === 2 && !done) await sleep(120);
+    els[i].className = 'step done'; els[i].querySelector('.s').innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"><path d="m5 12 5 5 9-10"/></svg>';
+    els[i].querySelector('.ms').textContent = Math.round(performance.now() - t0) + ' ms';
+  }
+  await sleep(200); box.hidden = true; $('#output').hidden = false;
+  if (err) throw err; return res;
+}
+
+async function run() {
+  const text = $('#inputText').value.trim();
+  if (!text) { toast('Escribe o pega un borrador primero'); $('#inputText').focus(); return; }
+  if (words(text) < 15) { toast('El texto es muy corto: pega al menos un párrafo'); return; }
+  lastInput = text;
+  const btn = $('#runBtn'); btn.disabled = true; btn.lastChild.textContent = 'Procesando…';
+  const opts = { protect: $('#protectBtn').getAttribute('aria-pressed') === 'true', retries: +$('#retries').value, model: $('#modelName').textContent };
+  try {
+    const res = await animateSteps(runPipeline(text, opts));
+    renderResult(res, text);
+    saveConversation(text, res);
+  } catch (e) {
+    toast('No se pudo procesar el texto');
+    $('#output').classList.add('placeholder'); $('#output').textContent = 'No se pudo procesar: ' + (e.message || 'error del servidor') + '\n\nRevisa la consola donde corre server.py.';
+  } finally { btn.disabled = false; btn.lastChild.textContent = 'Paperizar'; }
+}
+
+/* ---------- Historial ---------- */
+function seedHistory() {
+  const now = Date.now();
+  return SAMPLES.slice(0, 3).map((s, i) => { const r = demoPipeline(s.text, { protect: true }); return { id: 'seed' + i, title: s.title, input: s.text, result: r, ts: now - [12, 90, 1440][i] * 60000 }; });
+}
+let history = store.get('ab_history', null) || seedHistory();
+function ago(ts) { const m = Math.round((Date.now() - ts) / 60000); if (m < 1) return 'ahora'; if (m < 60) return `hace ${m} min`; const h = Math.round(m / 60); if (h < 24) return `hace ${h} h`; return `hace ${Math.round(h / 24)} d`; }
+function renderHistory() {
+  const q = $('#searchHist').value.toLowerCase();
+  const list = history.filter(h => !q || h.title.toLowerCase().includes(q) || h.input.toLowerCase().includes(q));
+  $('#history').innerHTML = list.length ? list.map(h => {
+    const st = h.result.layers.some(l => l.status === 'bad') ? 'var(--bad)' : h.result.layers.some(l => l.status === 'warn') ? 'var(--warn)' : 'var(--ok)';
+    return `<div class="hist ${current === h.id ? 'on' : ''}" data-id="${h.id}" role="button" tabindex="0"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 6h16M4 12h10M4 18h7"/></svg></span><span style="min-width:0"><div class="t">${esc(h.title)}</div><div class="d"><span style="color:${st}">●</span> ${ago(h.ts)}</div></span><button class="del" data-del="${h.id}" aria-label="Eliminar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>`;
+  }).join('') : '<div class="empty-hist">No hay conversaciones que coincidan.</div>';
+}
+function saveConversation(input, result) {
+  const title = input.split(/\s+/).slice(0, 6).join(' ').replace(/[.,;:]$/, '') + '…';
+  const item = { id: 'c' + Date.now(), title, input, result, ts: Date.now() };
+  history.unshift(item); history = history.slice(0, 30); current = item.id; store.set('ab_history', history); renderHistory();
+}
+function openConversation(id) {
+  const h = history.find(x => x.id === id); if (!h) return;
+  current = id; go('inicio'); $('#inputText').value = h.input; renderProtected(h.input); renderResult(h.result, h.input); renderHistory(); closeSide();
+}
+
+/* ---------- Navegación ---------- */
+const VIEWS = ['inicio', 'como-funciona', 'equipo'];
+function go(v) { if (location.hash !== '#' + v) location.hash = v; else show(v); }
+function show(v) {
+  if (!VIEWS.includes(v)) v = 'inicio';
+  VIEWS.forEach(x => $('#view-' + x).hidden = x !== v);
+  document.querySelectorAll('#nav a').forEach(a => a.classList.toggle('on', a.dataset.view === v));
+  window.scrollTo({ top: 0, behavior: 'smooth' }); closeSide();
+}
+window.addEventListener('hashchange', () => show(location.hash.slice(1)));
+function closeSide() { $('#side').classList.remove('open'); }
+
+/* ---------- Utilidades ---------- */
+let toastT;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2600); }
+function currentResult() { const h = history.find(x => x.id === current); return h ? h.result : null; }
+
+/* ---------- Eventos ---------- */
+$('#runBtn').onclick = run;
+$('#regenBtn').onclick = () => { if (!$('#inputText').value.trim()) return toast('No hay borrador para regenerar'); run(); };
+$('#inputText').addEventListener('input', e => renderProtected(e.target.value));
+$('#inputText').addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') run(); });
+$('#sampleBtn').onclick = () => { const s = SAMPLES[Math.floor(Math.random() * SAMPLES.length)]; $('#inputText').value = s.text; renderProtected(s.text); toast('Ejemplo cargado: ' + s.title); };
+$('#clearBtn').onclick = () => { $('#inputText').value = ''; renderProtected(''); $('#output').className = 'output placeholder'; $('#output').textContent = 'El texto académico aparecerá aquí, con los términos protegidos resaltados.'; $('#report').hidden = true; $('#outMeta').textContent = '—'; current = null; renderHistory(); };
+$('#protectBtn').onclick = e => { const b = e.currentTarget; const on = b.getAttribute('aria-pressed') !== 'true'; b.setAttribute('aria-pressed', on); toast(on ? 'Protección de términos activada' : 'Protección desactivada: el modelo podría alterar cifras'); };
+$('#uploadBtn').onclick = () => $('#fileIn').click();
+$('#fileIn').onchange = e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { $('#inputText').value = r.result; renderProtected(r.result); toast('Archivo cargado: ' + f.name); }; r.readAsText(f); };
+$('#copyBtn').onclick = async () => { const t = $('#output').classList.contains('placeholder') ? '' : $('#output').innerText; if (!t) return toast('Aún no hay resultado para copiar'); try { await navigator.clipboard.writeText(t); toast('Texto copiado'); } catch { const s = getSelection(), r = document.createRange(); r.selectNodeContents($('#output')); s.removeAllRanges(); s.addRange(r); toast('Texto seleccionado: usa Ctrl+C'); } };
+$('#dlBtn').onclick = () => { const r = currentResult(); if (!r) return toast('Aún no hay reporte para descargar'); const blob = new Blob([JSON.stringify({ input: lastInput || history.find(x => x.id === current)?.input, ...r }, null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'abstractbot_reporte.json'; a.click(); toast('Reporte descargado'); };
+document.querySelectorAll('[data-fb]').forEach(b => b.onclick = () => toast(b.dataset.fb === 'up' ? 'Gracias, guardamos tu valoración' : 'Gracias, lo usaremos para mejorar'));
+$('#newChat').onclick = () => { $('#clearBtn').click(); go('inicio'); $('#inputText').focus(); };
+$('#history').onclick = e => { const d = e.target.closest('[data-del]'); if (d) { e.stopPropagation(); history = history.filter(h => h.id !== d.dataset.del); store.set('ab_history', history); renderHistory(); toast('Conversación eliminada'); return; } const h = e.target.closest('.hist'); if (h) openConversation(h.dataset.id); };
+$('#history').onkeydown = e => { if (e.key === 'Enter') { const h = e.target.closest('.hist'); if (h) openConversation(h.dataset.id); } };
+$('#searchHist').oninput = renderHistory;
+document.addEventListener('keydown', e => { if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) { e.preventDefault(); $('#searchHist').focus(); } if (e.key === 'Escape') { $('#settingsModal').hidden = true; closeSide(); } });
+let confirmClear = false;
+$('#clearHist').onclick = () => { if (!confirmClear) { confirmClear = true; $('#clearHist').textContent = '¿Seguro? Clic otra vez'; setTimeout(() => { confirmClear = false; $('#clearHist').textContent = 'Borrar todo'; }, 3000); return; } history = []; store.set('ab_history', history); renderHistory(); confirmClear = false; $('#clearHist').textContent = 'Borrar todo'; toast('Historial borrado'); };
+$('#menuBtn').onclick = () => $('#side').classList.toggle('open');
+document.querySelectorAll('[data-goto]').forEach(b => b.onclick = () => go(b.dataset.goto));
+$('#themeBtn').onclick = () => { const root = document.documentElement; const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; root.dataset.theme = dark ? 'light' : 'dark'; store.set('ab_theme', root.dataset.theme); };
+$('#settingsBtn').onclick = () => { $('#apiUrl').value = API; $('#settingsModal').hidden = false; $('#apiUrl').focus(); };
+$('#setCancel').onclick = () => $('#settingsModal').hidden = true;
+$('#settingsModal').onclick = e => { if (e.target.id === 'settingsModal') e.target.hidden = true; };
+$('#setSave').onclick = async () => { API = $('#apiUrl').value.trim().replace(/\/$/, ''); store.set('ab_api', API); $('#settingsModal').hidden = true; await checkHealth(); toast(online ? 'Conectado al servidor local' : 'Sin respuesta: sigue en modo demo'); };
+
+/* ---------- Contador de usuarios ---------- */
+(function counter() {
+  const n = store.get('ab_usernum', null) || 53000; store.set('ab_usernum', n);
+  const el = $('#userNum'); const fmt = x => '#' + x.toLocaleString('es-CO');
+  let v = n - 140; const step = () => { v = Math.min(n, v + 7); el.textContent = fmt(v); if (v < n) requestAnimationFrame(step); };
+  el.textContent = fmt(n); if (!matchMedia('(prefers-reduced-motion: reduce)').matches) step();
+})();
+
+/* ---------- Ejemplos ---------- */
+function renderSuggestions() {
+  $('#suggest').innerHTML = SAMPLES.map((s, i) => `<button class="sug" data-s="${i}" title="Fuente: ${esc(s.source || '')}"><span class="cat">${esc(s.cat)}</span><b>${esc(s.title)}</b><span>${esc(s.text)}</span></button>`).join('');
+  document.querySelectorAll('.sug').forEach(b => b.onclick = () => { const s = SAMPLES[b.dataset.s]; $('#inputText').value = s.text; renderProtected(s.text); $('#inputText').scrollIntoView({ behavior: 'smooth', block: 'center' }); toast('Ejemplo listo: pulsa Paperizar'); });
+}
+async function loadExamples() {
+  try { const r = await fetch(API + '/api/examples'); const j = await r.json(); if (Array.isArray(j) && j.length) { SAMPLES = j; renderSuggestions(); } } catch {}
+}
+
+/* ---------- Inicio ---------- */
+(function init() {
+  const th = store.get('ab_theme', null); if (th) document.documentElement.dataset.theme = th;
+  renderSuggestions();
+  renderHistory();
+  // Abre la conversación más reciente para que la app no arranque vacía
+  if (history[0]) { const h = history[0]; current = h.id; $('#inputText').value = h.input; renderProtected(h.input); renderResult(h.result, h.input); renderHistory(); }
+  show(location.hash.slice(1));
+  checkHealth();
+})();
+</script>
+</body>
+</html>

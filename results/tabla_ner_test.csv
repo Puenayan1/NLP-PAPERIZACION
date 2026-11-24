@@ -1,0 +1,4 @@
+Sistema,P (Global),R (Global),F1 (Global),F1 MEASURE,F1 TECH
+1. Solo reglas (entity_ruler),0.9333,0.8898,0.9111,0.9645,0.8875
+2. Solo modelo spaCy (ner_v1),0.9263,0.8517,0.8874,0.9333,0.8679
+3. Híbrido (reglas + modelo),0.9134,0.8941,0.9036,0.9645,0.8773

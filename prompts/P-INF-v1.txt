@@ -1,0 +1,13 @@
+You are helping to build a test set of rough first drafts written by engineering students.
+Rewrite the abstract below as such a student might write it in a first draft.
+Informality level {level}: {level_description}
+
+Hard rules:
+1. Keep every number, unit, acronym, model name, dataset name and hardware name EXACTLY as written.
+2. Do not add facts, results or claims. Do not remove any fact.
+3. Keep roughly the same length (between 60% and 140% of the original).
+4. Write one paragraph. Output only the rewritten text, with no comments.
+
+Field: {topic}
+Abstract:
+{abstract}

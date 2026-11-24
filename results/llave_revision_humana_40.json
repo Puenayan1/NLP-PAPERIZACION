@@ -1,0 +1,322 @@
+[
+  {
+    "item_id": "HUM_01",
+    "pair_id": "rt_057_G1_L1",
+    "generator": "G1",
+    "level": 1,
+    "candidate_X": "P-PAP-v1",
+    "candidate_Y": "P-BASE-v1"
+  },
+  {
+    "item_id": "HUM_02",
+    "pair_id": "rt_075_G1_L1",
+    "generator": "G1",
+    "level": 1,
+    "candidate_X": "P-BASE-v1",
+    "candidate_Y": "P-PAP-v1"
+  },
+  {
+    "item_id": "HUM_03",
+    "pair_id": "rt_038_G1_L1",
+    "generator": "G1",
+    "level": 1,
+    "candidate_X": "P-BASE-v1",
+    "candidate_Y": "P-PAP-v1"
+  },
+  {
+    "item_id": "HUM_04",
+    "pair_id": "rt_056_G1_L1",
+    "generator": "G1",
+    "level": 1,
+    "candidate_X": "P-PAP-v1",
+    "candidate_Y": "P-BASE-v1"
+  },
+  {
+    "item_id": "HUM_05",
+    "pair_id": "rt_025_G1_L2",
+    "generator": "G1",
+    "level": 2,
+    "candidate_X": "P-BASE-v1",
+    "candidate_Y": "P-PAP-v1"
+  },
+  {
+    "item_id": "HUM_06",
+    "pair_id": "rt_099_G1_L2",
+    "generator": "G1",
+    "level": 2,
+    "candidate_X": "P-PAP-v1",
+    "candidate_Y": "P-BASE-v1"
+  },
+  {
+    "item_id": "HUM_07",
+    "pair_id": "rt_077_G1_L2",
+    "generator": "G1",
+    "level": 2,
+    "candidate_X": "P-BASE-v1",
+    "candidate_Y": "P-PAP-v1"
+  },
+  {
+    "item_id": "HUM_08",
+    "pair_id": "rt_069_G1_L2",
+    "generator": "G1",
+    "level": 2,
+    "candidate_X": "P-PAP-v1",
+    "candidate_Y": "P-BASE-v1"
+  },
+  {
+    "item_id": "HUM_09",
+    "pair_id": "rt_084_G1_L3",
+    "generator": "G1",
+    "level": 3,
+    "candidate_X": "P-BASE-v1",
+    "candidate_Y": "P-PAP-v1"
+  },
+  {
+    "item_id": "HUM_10",
+    "pair_id": "rt_050_G1_L3",
+    "generator": "G1",
+    "level": 3,
+    "candidate_X": "P-BASE-v1",
+    "candidate_Y": "P-PAP-v1"
+  },
+  {
+    "item_id": "HUM_11",
+    "pair_id": "rt_090_G1_L3",
+    "generator": "G1",
+    "level": 3,
+    "candidate_X": "P-PAP-v1",
+    "candidate_Y": "P-BASE-v1"
+  },
+  {
+    "item_id": "HUM_12",
+    "pair_id": "rt_092_G1_L3",
+    "generator": "G1",
+    "level": 3,
+    "candidate_X": "P-BASE-v1",
+    "candidate_Y": "P-PAP-v1"
+  },
+  {
+    "item_id": "HUM_13",
+    "pair_id": "rt_039_G2_L1",
+    "generator": "G2",
+    "level": 1,
+    "candidate_X": "P-BASE-v1",
+    "candidate_Y": "P-PAP-v1"
+  },
+  {
+    "item_id": "HUM_14",
+    "pair_id": "rt_084_G2_L1",
+    "generator": "G2",
+    "level": 1,
+    "candidate_X": "P-PAP-v1",
+    "candidate_Y": "P-BASE-v1"
+  },
+  {
+    "item_id": "HUM_15",
+    "pair_id": "rt_044_G2_L1",
+    "generator": "G2",
+    "level": 1,
+    "candidate_X": "P-PAP-v1",
+    "candidate_Y": "P-BASE-v1"
+  },
+  {
+    "item_id": "HUM_16",
+    "pair_id": "rt_078_G2_L1",
+    "generator": "G2",
+    "level": 1,
+    "candidate_X": "P-PAP-v1",
+    "candidate_Y": "P-BASE-v1"
+  },
+  {
+    "item_id": "HUM_17",
+    "pair_id": "rt_075_G2_L2",
+    "generator": "G2",
+    "level": 2,
+    "candidate_X": "P-PAP-v1",
+    "candidate_Y": "P-BASE-v1"
+  },
+  {
+    "item_id": "HUM_18",
+    "pair_id": "rt_015_G2_L2",
+    "generator": "G2",
+    "level": 2,
+    "candidate_X": "P-BASE-v1",
+    "candidate_Y": "P-PAP-v1"
+  },
+  {
+    "item_id": "HUM_19",
+    "pair_id": "rt_054_G2_L2",
+    "generator": "G2",
+    "level": 2,
+    "candidate_X": "P-PAP-v1",
+    "candidate_Y": "P-BASE-v1"
+  },
+  {
+    "item_id": "HUM_20",
+    "pair_id": "rt_028_G2_L2",
+    "generator": "G2",
+    "level": 2,
+    "candidate_X": "P-PAP-v1",
+    "candidate_Y": "P-BASE-v1"
+  },
+  {
+    "item_id": "HUM_21",
+    "pair_id": "rt_050_G2_L3",
+    "generator": "G2",
+    "level": 3,
+    "candidate_X": "P-PAP-v1",
+    "candidate_Y": "P-BASE-v1"
+  },
+  {
+    "item_id": "HUM_22",
+    "pair_id": "rt_099_G2_L3",
+    "generator": "G2",
+    "level": 3,
+    "candidate_X": "P-PAP-v1",
+    "candidate_Y": "P-BASE-v1"
+  },
+  {
+    "item_id": "HUM_23",
+    "pair_id": "rt_062_G2_L3",
+    "generator": "G2",
+    "level": 3,
+    "candidate_X": "P-BASE-v1",
+    "candidate_Y": "P-PAP-v1"
+  },
+  {
+    "item_id": "HUM_24",
+    "pair_id": "rt_068_G2_L3",
+    "generator": "G2",
+    "level": 3,
+    "candidate_X": "P-BASE-v1",
+    "candidate_Y": "P-PAP-v1"
+  },
+  {
+    "item_id": "HUM_25",
+    "pair_id": "rt_073_G3_L1",
+    "generator": "G3",
+    "level": 1,
+    "candidate_X": "P-BASE-v1",
+    "candidate_Y": "P-PAP-v1"
+  },
+  {
+    "item_id": "HUM_26",
+    "pair_id": "rt_089_G3_L1",
+    "generator": "G3",
+    "level": 1,
+    "candidate_X": "P-PAP-v1",
+    "candidate_Y": "P-BASE-v1"
+  },
+  {
+    "item_id": "HUM_27",
+    "pair_id": "rt_032_G3_L1",
+    "generator": "G3",
+    "level": 1,
+    "candidate_X": "P-BASE-v1",
+    "candidate_Y": "P-PAP-v1"
+  },
+  {
+    "item_id": "HUM_28",
+    "pair_id": "rt_061_G3_L1",
+    "generator": "G3",
+    "level": 1,
+    "candidate_X": "P-BASE-v1",
+    "candidate_Y": "P-PAP-v1"
+  },
+  {
+    "item_id": "HUM_29",
+    "pair_id": "rt_084_G3_L2",
+    "generator": "G3",
+    "level": 2,
+    "candidate_X": "P-PAP-v1",
+    "candidate_Y": "P-BASE-v1"
+  },
+  {
+    "item_id": "HUM_30",
+    "pair_id": "rt_089_G3_L2",
+    "generator": "G3",
+    "level": 2,
+    "candidate_X": "P-BASE-v1",
+    "candidate_Y": "P-PAP-v1"
+  },
+  {
+    "item_id": "HUM_31",
+    "pair_id": "rt_091_G3_L2",
+    "generator": "G3",
+    "level": 2,
+    "candidate_X": "P-BASE-v1",
+    "candidate_Y": "P-PAP-v1"
+  },
+  {
+    "item_id": "HUM_32",
+    "pair_id": "rt_045_G3_L2",
+    "generator": "G3",
+    "level": 2,
+    "candidate_X": "P-PAP-v1",
+    "candidate_Y": "P-BASE-v1"
+  },
+  {
+    "item_id": "HUM_33",
+    "pair_id": "rt_021_G3_L3",
+    "generator": "G3",
+    "level": 3,
+    "candidate_X": "P-BASE-v1",
+    "candidate_Y": "P-PAP-v1"
+  },
+  {
+    "item_id": "HUM_34",
+    "pair_id": "rt_011_G3_L3",
+    "generator": "G3",
+    "level": 3,
+    "candidate_X": "P-PAP-v1",
+    "candidate_Y": "P-BASE-v1"
+  },
+  {
+    "item_id": "HUM_35",
+    "pair_id": "rt_013_G3_L3",
+    "generator": "G3",
+    "level": 3,
+    "candidate_X": "P-BASE-v1",
+    "candidate_Y": "P-PAP-v1"
+  },
+  {
+    "item_id": "HUM_36",
+    "pair_id": "rt_005_G3_L3",
+    "generator": "G3",
+    "level": 3,
+    "candidate_X": "P-BASE-v1",
+    "candidate_Y": "P-PAP-v1"
+  },
+  {
+    "item_id": "HUM_37",
+    "pair_id": "rt_066_G1_L1",
+    "generator": "G1",
+    "level": 1,
+    "candidate_X": "P-PAP-v1",
+    "candidate_Y": "P-BASE-v1"
+  },
+  {
+    "item_id": "HUM_38",
+    "pair_id": "rt_096_G1_L3",
+    "generator": "G1",
+    "level": 3,
+    "candidate_X": "P-BASE-v1",
+    "candidate_Y": "P-PAP-v1"
+  },
+  {
+    "item_id": "HUM_39",
+    "pair_id": "rt_065_G1_L3",
+    "generator": "G1",
+    "level": 3,
+    "candidate_X": "P-PAP-v1",
+    "candidate_Y": "P-BASE-v1"
+  },
+  {
+    "item_id": "HUM_40",
+    "pair_id": "rt_039_G3_L2",
+    "generator": "G3",
+    "level": 2,
+    "candidate_X": "P-PAP-v1",
+    "candidate_Y": "P-BASE-v1"
+  }
+]

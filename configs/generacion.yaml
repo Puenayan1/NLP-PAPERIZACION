@@ -1,0 +1,13 @@
+model_id: Qwen/Qwen2.5-3B-Instruct
+precision: fp16
+do_sample: true
+temperature: 0.3
+top_p: 0.9
+top_k: 50
+max_new_tokens: 450
+repetition_penalty: 1.05
+retries: 0
+seed: 42
+prompts:
+  tool: prompts/P-PAP-v1.txt
+  baseline: prompts/P-BASE-v1.txt
