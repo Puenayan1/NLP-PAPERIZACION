@@ -1,62 +1,41 @@
-# AbstractBot · interfaz web local
+# AbstractBot · Presentación Interactiva y Demo en Vivo
 
-Interfaz web de la herramienta de paperización. Se conecta con el código de `src/paperizar`
-(NER híbrido, generación con Qwen2.5-3B-Instruct y verificación) a través de `server.py`.
-Todo corre en el computador: el texto nunca se envía a servicios externos.
+Entorno web de presentación académica y demostración interactiva de **Paperización Verificable de Resúmenes de Ingeniería en Inglés**. Se conecta en local con `src/paperizar` (NER híbrido `ner_hybrid_v1`, generación restringida con `Qwen2.5-3B-Instruct` y verificación multicapa con `DeBERTa-v3 NLI`) a través de `server.py`.
 
-## Instalación
+## Ejecución Rápida
 
-Copia `server.py` y la carpeta `web/` en la raíz del repositorio `paperizar/`
-(junto a `configs/`, `models/`, `prompts/` y `src/`). Después:
+En Windows PowerShell (automatizado):
 
-```bash
-pip install fastapi uvicorn          # además de los requerimientos del proyecto (spacy, torch, transformers…)
-python server.py                     # abre http://localhost:8000 en el navegador
+```powershell
+.\run_abstractbot.ps1
 ```
 
-Opciones útiles:
+O manualmente desde la raíz del repositorio:
+
+```bash
+pip install fastapi uvicorn
+python server.py                     # abre http://localhost:8000
+```
+
+Opciones útiles de `server.py`:
 
 | Opción | Para qué sirve |
 |---|---|
-| `--port 8080` | Cambiar el puerto |
-| `--no-nli` | No usar la capa NLI (evita descargar el modelo NLI) |
-| `--preload` | Cargar el LLM al arrancar en vez de en la primera petición |
-| `--ner-model models/ner_v1` | Probar otra variante del NER |
+| `--port 8080` | Cambiar el puerto HTTP |
+| `--no-nli` | Desactivar la capa NLI (evita cargar `nli-deberta-v3-xsmall`) |
+| `--preload` | Cargar el LLM al arrancar el servidor en vez de en la primera petición |
+| `--ner-model models/ner_v1` | Probar otra variante del reconocedor NER |
 
-## Requisitos de hardware
+## Estructura de la Presentación Interactiva (6 Pestañas)
 
-El LLM (Qwen2.5-3B-Instruct, fp16) necesita una GPU con unos 8 GB de memoria para responder en segundos.
-En CPU funciona, pero cada abstract puede tardar varios minutos.
-La primera ejecución descarga el modelo de Hugging Face (unos 6 GB) y luego queda en caché.
+1. **Inicio y Problema (`#1-problema`)**: Portada del artículo, equipo investigador, KPIs principales, los 4 riesgos de usar LLMs genéricos en resúmenes científicos y premisa ética/arquitectónica.
+2. **Arquitectura y Datos (`#2-arquitectura`)**: Ciclo de aseguramiento ML de Ashmore et al. en 4 etapas, diagrama de tubería experimental vs. despliegue local, Tabla I de conjuntos disjuntos y control de contaminación temporal (`>= 2025-06-01`).
+3. **Metodología (`#3-metodologia`)**: Separación de 4 familias abiertas de LLM, hallazgo del piloto (`SmolLM2` → `Granite-3.1`), Tabla II de la compuerta sintética (`593/900`), arquitectura `ner_hybrid_v1` y contraste `P-PAP-v1` vs. `P-BASE-v1`.
+4. **Caso COIL Paso a Paso (`#4-trazabilidad`)**: Recorrido interactivo del caso real `arXiv:2611.12223` (`rt_000_G1_L1` y `rt_000_G1_L3`) con botón directo para enviarlo al Demo en Vivo.
+5. **Resultados Experimentales (`#5-resultados`)**: Sub-pestañas interactivas para Auditor NER (`ner_test`), Evaluación Sintética Pareada (`N = 593`), Borradores Humanos Reales (`gold_real`, `N = 12`), Evaluación Humana Ciega (`N = 40`) y Conclusiones / Trabajo Futuro.
+6. **Demo en Vivo (`#6-demo`)**: Espacio interactivo conectado a `server.py` con selector rápido de 8 casos reales del estudio (`web/examples.json`), resaltado NER en tiempo real (`POST /api/ner`) y semáforo auditable de 7 capas (`POST /api/paperizar`).
 
-## Cómo funciona la conexión
-
-| Endpoint | Qué hace |
-|---|---|
-| `GET /` | Sirve `web/index.html` |
-| `GET /api/health` | Estado del servidor y del modelo |
-| `GET /api/examples` | Ejemplos de `web/examples.json` (borradores de `pairs.jsonl` y resúmenes del parquet eLife) |
-| `POST /api/ner` | Entidades MEASURE / TECH del NER híbrido, para resaltar el borrador en vivo |
-| `POST /api/paperizar` | Genera con `P-PAP-v1`, verifica con `verify_single_rewrite` y, si se perdió, inventó o cambió una entidad, reintenta con los términos protegidos en el prompt |
-
-Si el servidor no responde, la página funciona en **modo demo**, con un NER y una reescritura
-simulados en el navegador, y lo indica en la barra superior.
-
-## Capas del semáforo
-
-| Capa | Fuente | Verde | Amarillo |
-|---|---|---|---|
-| Entidades preservadas | NER híbrido + `entity_present` | cobertura ≥ 0,95 | ≥ 0,85 |
-| Nada inventado | precisión de entidades | ≥ 0,95 | ≥ 0,85 |
-| Unidades intactas | `detect_units_changed` y MEASURE perdidas | ninguna cambia | — |
-| Similitud semántica | vectores del modelo spaCy | ≥ 0,90 | ≥ 0,80 |
-| Implicación (NLI) | `cross-encoder/nli-deberta-v3-xsmall`, en ambos sentidos | ≥ 0,80 | ≥ 0,60 |
-| Registro académico | Flesch (textstat) y `configs/flesch_bounds.json` | baja y queda en [p10, p90] | baja |
-| No es una copia | ROUGE-L entrada contra salida | ≤ 0,60 | ≤ 0,80 |
-
-Los umbrales están en `THRESHOLDS`, al inicio de `server.py`.
-
-## Nota sobre el modelo NER descargado de Drive
-
-Al descargar la carpeta en zip, Google Drive renombra los archivos `cfg` a `cfg.txt`, y spaCy no carga
-el modelo. `server.py` lo detecta y restaura los nombres al arrancar.
+### Controles para Exposición en Salón de Clase
+- **Teclado**: Flechas `←` y `→` para cambiar entre pestañas (se desactivan automáticamente al escribir dentro del editor).
+- **Modo Proyector**: Botón en la barra superior que amplía la escala tipográfica y el ancho útil para videobeam.
+- **Pantalla Completa y Tema**: Alternancia entre modo claro/oscuro y pantalla completa nativa del navegador.

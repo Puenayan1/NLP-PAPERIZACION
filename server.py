@@ -296,7 +296,8 @@ def paperizar(body: PaperizarIn):
         while True:
             gen = generate_once(engine, draft, protected if body.protect else [], attempt)
             rep = build_report(draft, gen["A_prime"], attempt + 1,
-                               {"model_id": gen["model_id"], "prompt_id": gen["prompt_id"], "prompt_hash": gen["prompt_hash"]})
+                               {"model_id": gen["model_id"], "prompt_id": gen["prompt_id"],
+                                "prompt_hash": gen["prompt_hash"], "gen_seed": gen.get("gen_seed")})
             score = (rep["coverage"] + rep["precision"]) - (1 if rep["units_changed"] else 0)
             if best is None or score > best[0]:
                 best = (score, rep)
